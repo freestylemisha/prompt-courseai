@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Ultimate Beginner's Guide to Prompt Engineering</title>
+    <style>
+        /* --- Base & Typography --- */
+        :root {
+            --primary-color: #005f73;
+            --secondary-color: #0a9396;
+            --accent-color: #ee9b00;
+            --text-color: #212529;
+            --bg-light: #f8f9fa;
+            --bg-white: #ffffff;
+            --border-color: #dee2e6;
+            --success-light: #f6fff1;
+            --success-dark: #4f772d;
+            --danger-light: #fff1f1;
+            --danger-dark: #d00000;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.7;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-light);
+            color: var(--text-color);
+            scroll-behavior: smooth;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        h1, h2, h3, h4 {
+            color: var(--primary-color);
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        h2 { font-size: 2.5rem; text-align: center; margin-bottom: 20px; }
+        h3 { font-size: 1.75rem; }
+        p { margin-bottom: 1rem; font-size: 1.1rem; }
+
+        /* --- Header / Hero Section --- */
+        .hero {
+            background: linear-gradient(rgba(0, 2, 4, 0.6), rgba(0, 2, 4, 0.6)), url('https://images.unsplash.com/photo-1677756119517-756a188d2d94?auto=format&fit=crop&q=80&w=2070') no-repeat center center/cover;
+            color: var(--bg-white);
+            padding: 100px 0;
+            text-align: center;
+        }
+
+        .hero h1 { font-size: 3.5rem; color: var(--bg-white); margin-bottom: 1rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        .hero p { font-size: 1.5rem; color: rgba(255, 255, 255, 0.9); margin-bottom: 2rem; }
+
+        .cta-button {
+            background-color: var(--accent-color);
+            color: var(--primary-color);
+            padding: 18px 35px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .cta-button:hover { background-color: #ffb703; transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+        
+        .early-bird-offer { background-color: rgba(0, 0, 0, 0.2); border-radius: 10px; padding: 20px; margin-bottom: 2rem; display: inline-block; }
+        .early-bird-offer p { margin: 0 0 10px 0; font-weight: bold; color: #fff; font-size: 1.2rem; }
+        
+        .price-display { display: flex; justify-content: center; align-items: center; gap: 15px; }
+        .strikethrough-price { text-decoration: line-through; font-size: 1.5rem; color: rgba(255,255,255,0.6); }
+        .early-bird-price { font-size: 2.2rem; font-weight: bold; color: var(--accent-color); }
+
+
+        /* --- General Section Styling --- */
+        .section { padding: 80px 0; }
+        .section-intro { text-align: center; max-width: 700px; margin: 0 auto 50px auto; }
+
+        /* --- Problem Section --- */
+        #problem { background-color: var(--bg-white); }
+        .problem-container { display: flex; align-items: center; gap: 40px; }
+        .problem-text { flex: 1; }
+        .problem-image { flex: 1; font-family: "Courier New", Courier, monospace; background: var(--danger-light); border: 1px solid var(--border-color); border-left: 5px solid var(--danger-dark); padding: 20px; border-radius: 8px; font-size: 1.1rem; white-space: pre-wrap; }
+
+        /* --- Modules Section --- */
+        .modules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; margin-top: 50px; }
+        .module-card { background-color: var(--bg-white); border-radius: 8px; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-top: 5px solid var(--secondary-color); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .module-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
+        .module-card h4 { color: var(--primary-color); font-size: 1.3rem; margin-top: 0; margin-bottom: 15px; }
+        .module-card p { font-size: 1rem; margin-bottom: 0; }
+
+        /* --- Sneak Peek Section --- */
+        #sneak-peek { background-color: var(--bg-white); }
+        .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; }
+        .prompt-box h4 { font-size: 1.2rem; margin-bottom: 10px; }
+        .prompt-box pre { padding: 15px; border-radius: 4px; font-family: "Courier New", Courier, monospace; white-space: pre-wrap; word-wrap: break-word; min-height: 250px; }
+        .bad-prompt h4 { color: var(--danger-dark); }
+        .bad-prompt pre { border-left: 4px solid var(--danger-dark); background-color: var(--danger-light); }
+        .good-prompt h4 { color: var(--success-dark); }
+        .good-prompt pre { border-left: 4px solid var(--success-dark); background-color: var(--success-light); }
+        
+        /* --- Testimonials Section --- */
+        .testimonials-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; }
+        .testimonial-card { background: var(--bg-white); padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 5px solid var(--accent-color); }
+        .testimonial-card blockquote { margin: 0 0 15px 0; padding: 0; font-style: italic; font-size: 1.1rem; border: none; }
+        .testimonial-card cite { font-weight: bold; color: var(--primary-color); font-style: normal; }
+
+        /* --- Final CTA Section --- */
+        #final-cta { background-color: var(--primary-color); color: var(--bg-white); }
+        #final-cta h2 { color: var(--bg-white); }
+        #final-cta .section-intro { margin-bottom: 30px; }
+        #final-cta .early-bird-offer { background-color: transparent; }
+
+        /* --- Modal Styles --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-content {
+            background: var(--bg-white);
+            padding: 40px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+            text-align: center;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        .modal-content h3 { margin-top: 0; font-size: 1.8rem; }
+        .modal-content p { color: #6c757d; font-size: 1.1rem; }
+        .close-button {
+            position: absolute;
+            top: 10px; right: 15px;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+            border: none; background: none;
+            line-height: 1;
+        }
+        .close-button:hover { color: #333; }
+        .waitlist-form input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        .waitlist-form button {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        .success-message { display: none; }
+        .success-message .icon { font-size: 4rem; color: var(--success-dark); line-height: 1; }
+        .success-message h3 { color: var(--success-dark); }
+        
+        /* --- Footer --- */
+        footer { text-align: center; padding: 40px 20px; background-color: #212529; color: #adb5bd; }
+        
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .hero p { font-size: 1.2rem; }
+            h2 { font-size: 2rem; }
+            .problem-container { flex-direction: column; }
+            .comparison-grid { grid-template-columns: 1fr; }
+            .prompt-box pre { min-height: auto; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="container">
+            <h1>Stop Getting Generic AI Answers. Start Getting Genius Results.</h1>
+            <p>The Ultimate Beginner's Guide to Prompt Engineering is launching soon. <br>Join the waitlist to become an AI power user from day one.</p>
+            <div class="early-bird-offer">
+                <p>Limited Early Bird Offer: Save 40%!</p>
+                <div class="price-display">
+                    <span class="strikethrough-price">$49</span>
+                    <span class="early-bird-price">$29</span>
+                </div>
+            </div>
+            <br>
+            <a href="#" class="cta-button waitlist-trigger">Join Waitlist & Lock In Your Discount</a>
+        </div>
+    </header>
+
+    <main>
+        <!-- Content Sections -->
+        <section id="problem" class="section">
+            <div class="container">
+                 <div class="problem-container">
+                    <div class="problem-text">
+                        <h2>Frustrated with Vague AI Responses?</h2>
+                        <p>You've seen the power of AI, but your results feel... lackluster. You ask for "blog ideas" and get a generic list. You ask for an email and get something you can't use.</p>
+                        <p><strong>The problem isn't the AI. It's the prompt.</strong></p>
+                        <p>AI models are like brilliant interns: incredibly powerful but extremely literal. They won't guess your intentions. To get valuable output, you need to give them valuable input. That skill is called Prompt Engineering, and it's the single most important skill for leveraging AI today.</p>
+                    </div>
+                    <div class="problem-image">
+                        <span style="font-weight: bold; color: var(--danger-dark);">YOUR PROMPT:</span><br>
+                        <code>Write an email to my team about the new project.</code>
+                        <hr style="border-color: #e0e0e0; margin: 15px 0;">
+                        <span style="font-weight: bold; color: var(--danger-dark);">AI's USELESS RESPONSE:</span><br>
+                        <code>Subject: New Project...</code>
+                    </div>
+                 </div>
+            </div>
+        </section>
+
+        <section id="learn" class="section">
+            <div class="container">
+                <div class="section-intro">
+                    <h2>From Novice to Navigator in 5 Simple Modules</h2>
+                    <p>This course gives you a repeatable framework to get exactly what you want from any AI, every single time. No fluff, just actionable techniques you can use immediately.</p>
+                </div>
+                <div class="modules-grid">
+                    <div class="module-card"><h4>Module 1: The "Why"</h4><p>Understand the core concept of prompt engineering...</p></div>
+                    <div class="module-card"><h4>Module 2: The Four Pillars</h4><p>Learn the unbreakable framework (Role, Task, Context, Format)...</p></div>
+                    <div class="module-card"><h4>Module 3: From Vague to Valuable</h4><p>See powerful before-and-after examples...</p></div>
+                    <div class="module-card"><h4>Module 4: Level-Up Techniques</h4><p>Master intermediate skills like "Few-Shot" and "Chain-of-Thought"...</p></div>
+                    <div class="module-card"><h4>Module 5: Practical Projects</h4><p>Apply your new skills with a hands-on capstone project...</p></div>
+                    <div class="module-card"><h4>Bonus: The Iterative Mindset</h4><p>Learn how to refine your prompts through conversation...</p></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="sneak-peek" class="section">
+             <div class="container">
+                <div class="section-intro"><h2>See the Difference for Yourself</h2><p>This isn't abstract theory...</p></div>
+                <div class="comparison-grid">
+                    <div class="prompt-box bad-prompt"><h4>VAGUE PROMPT 👎</h4><pre><code>Give me some blog post ideas.</code></pre></div>
+                    <div class="prompt-box good-prompt"><h4>VALUABLE PROMPT 👍</h4><pre><code>You are a content marketing expert...<br>My blog is for young professionals...<br>Brainstorm 5 catchy and unique blog post titles...<br>Present the titles as a numbered list.</code></pre></div>
+                </div>
+             </div>
+        </section>
+
+        <section id="testimonials" class="section">
+            <div class="container">
+                <div class="section-intro"><h2>Stop Wasting Time. Start Creating Value.</h2><p>Professionals, students, and creators are already using these techniques...</p></div>
+                <div class="testimonials-grid">
+                    <div class="testimonial-card"><blockquote>"This was a game-changer... I'm saving hours every week."</blockquote><cite>— Sarah J., Digital Marketer</cite></div>
+                    <div class="testimonial-card"><blockquote>"I thought I was pretty good with AI... this took my results to a completely new level."</blockquote><cite>— Mike R., Software Developer</cite></div>
+                    <div class="testimonial-card"><blockquote>"As a writer, I was worried AI would be a crutch. This guide taught me how to use it as a collaborator."</blockquote><cite>— Chloe T., Freelance Writer</cite></div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="final-cta" class="section">
+            <div class="container" style="text-align: center;">
+                <div class="section-intro">
+                    <h2>Be the First to Know & Save 40%</h2>
+                    <p style="color: rgba(255, 255, 255, 0.9);">The course launches soon. Join the official waitlist to get an email the second it goes live and to lock in your exclusive 40% early bird discount. Don't miss out!</p>
+                </div>
+                <div class="early-bird-offer"><p>Your Exclusive Early Bird Price:</p><div class="price-display"><span class="strikethrough-price" style="font-size: 1.8rem;">$49</span><span class="early-bird-price" style="font-size: 2.5rem;">$29</span></div></div>
+                <br><br>
+                <a href="#" class="cta-button waitlist-trigger">Get Early Bird Access</a>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Prompt Engineering Course v1.0. All Rights Reserved.</p>
+    </footer>
+
+    <!-- Modal HTML -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal-content" id="modal-content">
+            <button class="close-button" id="close-modal">&times;</button>
+            
+            <div id="form-content">
+                <h3>Join the Early Bird Waitlist!</h3>
+                <p>Enter your email below to get your 40% discount code and be notified the moment we launch.</p>
+                <form class="waitlist-form" id="waitlist-form">
+                    <input type="email" name="email" placeholder="Your Email" required>
+                    <button type="submit" class="cta-button">Secure My Spot</button>
+                </form>
+            </div>
+
+            <div class="success-message" id="success-message">
+                <div class="icon">✅</div>
+                <h3>You're on the list!</h3>
+                <p>Thank you for signing up. Your exclusive 40% discount code will be sent to your email on launch day. Keep an eye on your inbox!</p>
+            </div>
+        </div>
+    </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalContent = document.getElementById('modal-content');
+        const closeModalButton = document.getElementById('close-modal');
+        const waitlistTriggers = document.querySelectorAll('.waitlist-trigger');
+        const waitlistForm = document.getElementById('waitlist-form');
+        const formContent = document.getElementById('form-content');
+        const successMessage = document.getElementById('success-message');
+
+        const openModal = () => {
+            formContent.style.display = 'block';
+            successMessage.style.display = 'none';
+            waitlistForm.reset();
+            modalOverlay.classList.add('active');
+        };
+
+        const closeModal = () => {
+            modalOverlay.classList.remove('active');
+        };
+
+        waitlistTriggers.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                openModal();
+            });
+        });
+
+        closeModalButton.addEventListener('click', closeModal);
+
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modalOverlay.classList.contains('active')) {
+                closeModal();
+            }
+        });
+
+        waitlistForm.addEventListener('submit', (e) => {
+            e.preventDefault(); 
+            
+            const email = waitlistForm.email.value;
+            console.log(`Email submitted: ${email}`);
+
+            formContent.style.display = 'none';
+            successMessage.style.display = 'block';
+
+            setTimeout(() => {
+                closeModal();
+            }, 4000);
+        });
+    });
+</script>
+
+</body>
+</html>
