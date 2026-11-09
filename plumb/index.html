@@ -21,7 +21,10 @@
       <svg viewBox="0 0 14 26" aria-hidden="true"><path d="M7 0v11" stroke="currentColor" stroke-width="1.4"/><path d="M7 10.5c2.6 0 4.4 1.6 4.4 3.9 0 3-2.6 6-4.4 10.6C5.2 20.4 2.6 17.4 2.6 14.4c0-2.3 1.8-3.9 4.4-3.9z" fill="currentColor"/></svg>
       <span>Plumb</span>
     </a>
-    <p class="meta" id="topMeta">No. 1</p>
+    <div class="top__right">
+      <p class="meta" id="topMeta">No. 1</p>
+      <button class="navbtn" id="lbBtn" type="button">Leaderboard</button>
+    </div>
   </div>
 </header>
 
@@ -108,6 +111,7 @@
       <div class="bars" id="bars" aria-hidden="true"></div>
     </div>
     <ul class="rows" id="rows"></ul>
+    <div id="endBoardSlot"></div>
     <div class="end__actions">
       <button class="btn btn--primary" id="shareBtn" type="button">Copy result</button>
       <button class="btn" id="againBtn" type="button">Play a practice set</button>
@@ -121,9 +125,43 @@
     </dl>
     <p class="next" id="next"></p>
   </section>
+
+  <!-- leaderboard on its own page -->
+  <section class="lbview" id="lbview" hidden aria-labelledby="lbTitle">
+    <div class="lbview__head">
+      <div>
+        <p class="kicker" id="lbKicker">No. 1</p>
+        <h2 class="lbview__title" id="lbTitle">Leaderboard</h2>
+      </div>
+      <button class="btn" id="lbBack" type="button">Back</button>
+    </div>
+    <div id="lbSlot"></div>
+  </section>
+
+  <!-- the one leaderboard box; moved between the results and its own page -->
+  <div class="board" id="board">
+    <div class="board__head">
+      <h3 class="board__title">Leaderboard</h3>
+      <div class="tabs" role="tablist" aria-label="Leaderboard period">
+        <button type="button" role="tab" id="tabToday" aria-selected="true">Today</button>
+        <button type="button" role="tab" id="tabAll" aria-selected="false">All time</button>
+      </div>
+    </div>
+    <form class="namer" id="namer" hidden>
+      <label for="nameIn">Your name on the leaderboard</label>
+      <div class="namer__row">
+        <input id="nameIn" name="name" maxlength="20" autocomplete="nickname" spellcheck="false" placeholder="e.g. Misha">
+        <button class="btn btn--primary" id="nameGo" type="submit">Post score</button>
+      </div>
+      <p class="namer__err" id="nameErr" hidden></p>
+    </form>
+    <p class="board__note" id="boardNote"></p>
+    <ol class="board__list" id="boardList"></ol>
+    <p class="board__foot" id="boardFoot"></p>
+  </div>
 </main>
 
-<footer class="foot"><p>A new set every midnight, the same for everyone. Scores stay on this device.</p></footer>
+<footer class="foot"><p>A new set every midnight, the same for everyone.</p></footer>
 
 <script src="plumb.js"></script>
 </body>

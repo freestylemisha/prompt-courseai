@@ -777,7 +777,7 @@
   const dayRec = () => data.days[today] || null;
 
   const el = {
-    intro: $('#intro'), run: $('#run'), end: $('#end'),
+    intro: $('#intro'), run: $('#run'), end: $('#end'), lbview: $('#lbview'),
     topMeta: $('#topMeta'), introKicker: $('#introKicker'), startBtn: $('#startBtn'), startMeta: $('#startMeta'),
     playedNote: $('#playedNote'), practiceBtn: $('#practiceBtn'),
     rIdx: $('#rIdx'), rTask: $('#rTask'), rName: $('#rName'), rMeta: $('#rMeta'), progress: $('#progress'),
@@ -785,8 +785,10 @@
     verdict: $('#verdict'), vScore: $('#vScore'), vHead: $('#vHead'), vDetail: $('#vDetail'), act: $('#act'),
   };
 
+  let view = 'intro';
   function show(which) {
-    for (const k of ['intro', 'run', 'end']) el[k].hidden = k !== which;
+    view = which;
+    for (const k of ['intro', 'run', 'end', 'lbview']) el[k].hidden = k !== which;
     document.documentElement.dataset.playing = String(which === 'run');
     window.scrollTo(0, 0);
   }
@@ -1001,6 +1003,7 @@
     $('#shareBtn').onclick = () => copyShare(shareText(total));
     el.topMeta.textContent = mode === 'daily' ? `No. ${today} · ${fmtDate(new Date())}` : 'Practice set';
     show('end');
+    openBoard('#endBoardSlot');
     tick();
   }
 
@@ -1034,6 +1037,187 @@
       else fallback();
     } catch (e) { fallback(); }
   }
+
+  /* ------------------------------------------------------------ leaderboard
+   * Scores go to the same Supabase project as Hexed, table plumb_scores
+   * (see supabase-setup.sql). The key below is the publishable one: it can
+   * only read scores and add today's, which the table's rules check.
+   */
+  const LB = {
+    url: 'https://rzarchlzbysovqumzvyi.supabase.co',
+    key: 'sb_publishable_Ssl9L8brbm2t8YLiRgnFEQ_yGmAYJN_',
+  };
+  const uuid = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID()
+    : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); }));
+  const player = store.get('plumb:player', null) || { id: uuid(), name: '' };
+  store.set('plumb:player', player);
+  const posted = store.get('plumb:posted', {});
+
+  async function sb(path, opts = {}) {
+    const ctl = new AbortController();
+    const timeout = setTimeout(() => ctl.abort(), 9000);
+    try {
+      const r = await fetch(`${LB.url}/rest/v1/${path}`, {
+        ...opts, signal: ctl.signal,
+        headers: { apikey: LB.key, 'Content-Type': 'application/json', ...(opts.headers || {}) },
+      });
+      const text = await r.text();
+      if (!r.ok) {
+        const e = new Error(text || r.statusText); e.status = r.status;
+        try { e.body = JSON.parse(text); } catch (_) { /* not JSON */ }
+        throw e;
+      }
+      return text ? JSON.parse(text) : null;
+    } finally { clearTimeout(timeout); }
+  }
+
+  const B = { el: $('#board'), tab: 'today', req: 0 };
+  const bEl = {
+    list: $('#boardList'), note: $('#boardNote'), foot: $('#boardFoot'),
+    namer: $('#namer'), nameIn: $('#nameIn'), nameErr: $('#nameErr'), nameGo: $('#nameGo'),
+    today: $('#tabToday'), all: $('#tabAll'),
+  };
+  const TOP = 10;
+  const cleanName = (v) => v.replace(/\s+/g, ' ').trim().slice(0, 20);
+  const dayDone = () => { const r = dayRec(); return !!(r && r.scores.length >= ROUNDS); };
+  const markPosted = () => { posted[today] = true; store.set('plumb:posted', posted); };
+
+  async function postScore() {
+    if (!dayDone() || posted[today] || !player.name) return;
+    const rounds = dayRec().scores.slice(0, ROUNDS).map((v) => clamp(Math.round(v), 0, 100));
+    const total = rounds.reduce((a, b) => a + b, 0);
+    try {
+      await sb('plumb_scores', {
+        method: 'POST', headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ day: today, player_id: player.id, name: player.name, total, rounds }),
+      });
+      markPosted();
+    } catch (e) {
+      if (e.status === 409) markPosted(); // already on the board
+      else throw e;
+    }
+  }
+
+  function updateNamer() {
+    bEl.namer.hidden = !(dayDone() && !posted[today]);
+    if (!bEl.namer.hidden && !bEl.nameIn.value) bEl.nameIn.value = player.name || '';
+  }
+
+  function boardRow(r, you) {
+    const li = document.createElement('li');
+    if (you) li.dataset.you = '';
+    li.innerHTML = '<span class="rk"></span><span class="nm"></span><span class="ex"></span><span class="sc"></span>';
+    li.children[0].textContent = r.rank;
+    li.children[1].textContent = r.name;
+    if (you) { const t = document.createElement('small'); t.textContent = 'you'; li.children[1].append(t); }
+    li.children[2].textContent = r.extra || '';
+    li.children[3].textContent = r.score;
+    return li;
+  }
+
+  function renderBoard(rows, kind) {
+    bEl.list.innerHTML = '';
+    bEl.foot.textContent = '';
+    if (!rows.length) {
+      bEl.note.textContent = kind === 'today' ? 'No scores yet today. Be the first.' : 'No scores yet.';
+      return;
+    }
+    let rank = 0, prev = null;
+    rows.forEach((r, i) => { if (r.score !== prev) { rank = i + 1; prev = r.score; } r.rank = rank; });
+    const me = rows.findIndex((r) => r.pid === player.id);
+    rows.slice(0, TOP).forEach((r) => bEl.list.append(boardRow(r, r.pid === player.id)));
+    if (me >= TOP) {
+      if (me > TOP) { const gap = document.createElement('li'); gap.className = 'gap'; gap.textContent = '⋯'; bEl.list.append(gap); }
+      bEl.list.append(boardRow(rows[me], true));
+    }
+    const n = rows.length;
+    if (kind === 'today') {
+      bEl.note.textContent = me >= 0
+        ? `You’re #${rows[me].rank} of ${n} today.`
+        : `${n} ${n === 1 ? 'player' : 'players'} so far today.`;
+    } else {
+      bEl.note.textContent = me >= 0
+        ? `You’re #${rows[me].rank} of ${n} players, ranked by average score.`
+        : `${n} ${n === 1 ? 'player' : 'players'}, ranked by average score.`;
+    }
+    if (n > TOP) bEl.foot.textContent = `Showing the top ${TOP}${me >= TOP ? ' and you' : ''}.`;
+  }
+
+  async function loadBoard() {
+    const id = ++B.req;
+    bEl.today.setAttribute('aria-selected', String(B.tab === 'today'));
+    bEl.all.setAttribute('aria-selected', String(B.tab === 'all'));
+    updateNamer();
+    bEl.note.textContent = 'Loading…';
+    bEl.list.innerHTML = ''; bEl.foot.textContent = '';
+    try {
+      let rows;
+      if (B.tab === 'today') {
+        const res = await sb(`plumb_scores?select=player_id,name,total,created_at&day=eq.${today}&order=total.desc,created_at.asc&limit=1000`);
+        rows = res.map((r) => ({ pid: r.player_id, name: r.name, score: r.total }));
+      } else {
+        const res = await sb('plumb_player_stats?select=player_id,name,games,avg_total,best&order=avg_total.desc,games.desc&limit=1000');
+        rows = res.map((r) => ({ pid: r.player_id, name: r.name, score: r.avg_total, extra: `${r.games} ${r.games === 1 ? 'game' : 'games'} · best ${r.best}` }));
+      }
+      if (id === B.req) renderBoard(rows, B.tab);
+    } catch (e) {
+      if (id !== B.req) return;
+      const body = e.body ? JSON.stringify(e.body) : '';
+      const missing = e.status === 404 || /PGRST205|42P01|does not exist|schema cache/i.test(body);
+      bEl.note.textContent = missing
+        ? 'The leaderboard isn’t switched on yet. Your scores are still saved on this device.'
+        : 'Couldn’t reach the leaderboard. Check your connection, then reopen it.';
+      bEl.namer.hidden = true;
+    }
+  }
+
+  function openBoard(slot) {
+    $(slot).appendChild(B.el);
+    bEl.nameErr.hidden = true;
+    (async () => {
+      if (dayDone() && !posted[today] && player.name) { try { await postScore(); } catch (_) { /* the form stays up to retry */ } }
+      loadBoard();
+    })();
+  }
+
+  let lbFrom = 'intro';
+  function showLeaderboard() {
+    if (view === 'lbview') return;
+    lbFrom = view;
+    clearTimeout(timer);
+    $('#lbKicker').textContent = `No. ${today} · ${fmtDate(new Date())}`;
+    show('lbview');
+    openBoard('#lbSlot');
+  }
+  function leaveLeaderboard() {
+    if (lbFrom === 'end') renderEnd();
+    else renderIntro();
+  }
+
+  bEl.today.addEventListener('click', () => { if (B.tab !== 'today') { B.tab = 'today'; loadBoard(); } });
+  bEl.all.addEventListener('click', () => { if (B.tab !== 'all') { B.tab = 'all'; loadBoard(); } });
+  bEl.namer.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const n = cleanName(bEl.nameIn.value);
+    const fail = (msg) => { bEl.nameErr.textContent = msg; bEl.nameErr.hidden = false; };
+    if (!n) { fail('Type a name first.'); return; }
+    bEl.nameErr.hidden = true;
+    player.name = n; store.set('plumb:player', player);
+    bEl.nameGo.disabled = true; bEl.nameGo.textContent = 'Posting…';
+    try {
+      await postScore();
+      loadBoard();
+    } catch (err) {
+      fail(/check|violates|policy/i.test(err.message || '')
+        ? 'This score can’t be posted. Scores only count on the day of the puzzle.'
+        : 'Couldn’t post your score. Check your connection and try again.');
+    } finally {
+      bEl.nameGo.disabled = false; bEl.nameGo.textContent = 'Post score';
+    }
+  });
+  $('#lbBtn').addEventListener('click', showLeaderboard);
+  $('#lbBack').addEventListener('click', leaveLeaderboard);
+  $('#lbSlot').appendChild(B.el);
 
   /* ------------------------------------------------------------------ wiring */
   el.startBtn.addEventListener('click', startDaily);
