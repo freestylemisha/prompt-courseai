@@ -589,10 +589,10 @@ a.mini-chip { transition: transform .15s ease; }
     renderResult();
   }
 
-  function shareText() {
+  function shareText(withLink = true) {
     const head = G.kind === 'practice' ? 'Hexed practice' : `Hexed No. ${G.day + 1}`;
     const lines = G.guesses.map((g) => score(g, G.target).map((s) => s.kind === 'exact' ? '🟩' : s.kind === 'close' ? '🟨' : '⬜').join('') + ` ${match(g, G.target)}%`);
-    return [`${head} ${G.status === 'won' ? G.guesses.length : 'X'}/6`, ...lines, SITE_URL].join('\n');
+    return [`${head} ${G.status === 'won' ? G.guesses.length : 'X'}/6`, ...lines, ...(withLink ? [SITE_URL] : [])].join('\n');
   }
 
   function renderResult() {
@@ -607,7 +607,7 @@ a.mini-chip { transition: transform .15s ease; }
     const isLive = G.kind === 'daily' && games[G.day] && games[G.day].live;
     el.innerHTML = `<h2>${title}</h2><p>${line}</p>
       ${isLive && LB_ON ? '<div id="lbCta"></div>' : ''}
-      <pre class="share-box" id="shareBox">${esc(shareText())}</pre>
+      <pre class="share-box" id="shareBox">${esc(shareText(false))}</pre>
       <div class="btn-row">
         <button class="btn primary" id="copyBtn" type="button">Copy result</button>
         ${G.kind === 'daily' ? '<a class="btn" href="#leaderboard">See leaderboard</a>' : ''}
