@@ -4,6 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Hexed</title>
+<script>
+  // The game moved from GitHub Pages to Cloudflare. Forward visitors and bring
+  // their saved progress along (browsers keep saved data per website).
+  (function () {
+    if (!/github\.io$/.test(location.hostname)) return;
+    var hash = '';
+    try {
+      var keys = ['hexed:games', 'hexed:stats', 'hexed:player', 'hexed:posted', 'hexed:game'], d = {}, n = 0;
+      keys.forEach(function (k) { var v = localStorage.getItem(k); if (v) { d[k] = v; n++; } });
+      if (n) hash = '#import=' + encodeURIComponent(JSON.stringify(d));
+    } catch (e) {}
+    location.replace('https://hexed-deh.pages.dev/' + hash);
+  })();
+</script>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="Hexed: a daily color game. Guess today's color's hex code in six tries, then see how you compare on the leaderboard.">
 <meta name="theme-color" content="#f3f4f6">
@@ -403,9 +417,20 @@ a.mini-chip { transition: transform .15s ease; }
   const HEX = '0123456789ABCDEF';
   const MAX = 6;
   const LAUNCH = new Date(2026, 10, 9); // No. 1
-  const SITE_URL = /github\.io$/.test(location.hostname) ? location.origin + location.pathname : 'https://freestylemisha.github.io/prompt-courseai/';
+  const SITE_URL = 'https://hexed-deh.pages.dev/';
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // ---- Progress carried over from the old GitHub address (never overwrites local data)
+  if (location.hash.indexOf('#import=') === 0) {
+    try {
+      const d = JSON.parse(decodeURIComponent(location.hash.slice(8)));
+      Object.keys(d).forEach((k) => {
+        if (/^hexed:[a-z]+$/.test(k) && typeof d[k] === 'string' && localStorage.getItem(k) === null) { JSON.parse(d[k]); localStorage.setItem(k, d[k]); }
+      });
+    } catch (e) {}
+    history.replaceState(null, '', location.pathname + location.search);
+  }
 
   const store = {
     get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
